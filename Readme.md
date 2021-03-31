@@ -14,3 +14,4 @@ Shazam for Gnome 3.8
 - [ ] Récupérer le lien Shazam
 - [ ] Optimiser la vitesse de détection et les perfs
 - [ ] Publier l'app
+- [ ] Enlever la première notification vide
