@@ -15,3 +15,4 @@ Shazam for Gnome 3.8
 - [ ] Optimiser la vitesse de détection et les perfs
 - [ ] Publier l'app
 - [ ] Enlever la première notification vide
+- [ ] Utiliser des variables d'environnement pour éviter l'utilisation de fichiers
