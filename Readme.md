@@ -2,6 +2,8 @@
 
 ## Description
 Shazam for Gnome 3.8
+> Tested on Gnome 3.8 environment on ArchLinux
+> Tested on python 3.9.2
 
 ## Todo
 - [ ] Ajouter un mode tranquille, avec des scans plus lent
