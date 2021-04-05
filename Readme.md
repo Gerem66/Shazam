@@ -12,6 +12,9 @@ Shazam for Gnome 3.8
 ### Download extension from git
 * `git clone https://github.com/Gerem66/Shazam.git ~/.local/share/gnome-shell/extensions/shazam@gerem`
 
+## How to remove
+* `rm -R ~/.local/share/gnome-shell/extensions/shazam@gerem`
+
 ## Todo
 ### Interface
 - [x] Faire une interface
