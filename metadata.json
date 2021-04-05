@@ -1,6 +1,6 @@
 {
-  "name": "shazam",
-  "description": "Shazam for gnome 3.38",
+  "name": "Shazam",
+  "description": "Shazam for gnome 3.8",
   "uuid": "shazam@gerem",
   "shell-version": [
     "3.38"

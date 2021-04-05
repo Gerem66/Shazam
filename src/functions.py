@@ -4,7 +4,6 @@ import wave
 import pyaudio
 
 # Shazam
-from urllib.parse import unquote_plus
 from ShazamAPI import Shazam
 
 class GnomeShazam():
@@ -22,10 +21,12 @@ class GnomeShazam():
             recognize_generator = shazam.recognizeSong()
             try:
                 read = next(recognize_generator)
-                title = unquote_plus(read[1]['track']['urlparams']['{tracktitle}'])
-                artist = unquote_plus(read[1]['track']['urlparams']['{trackartist}'])
+                title = read[1]['track']['share']['subject']
+                shazam = read[1]['track']['share']['href']
                 
-                song = "{} - {}".format(title, artist)
+                #song = "{} - {}".format(title, artist)
+                #song = read[1]
+                song = title
                 Attempt = 0
             except Exception as ex:
                 pass

@@ -6,15 +6,26 @@ Shazam for Gnome 3.8
 > Tested on python 3.9.2
 
 ## Todo
-- [ ] Ajouter un mode tranquille, avec des scans plus lent
-- [ ] Noter plus d'info dans la sauvegarde des sons
-- [ ] Ne pas enregistrer les même sons consécutifs
-- [x] Supprimer les fichiers à la fin de l'utilisation
-- [ ] Historique
+### Interface
+- [x] Faire une interface
+- [x] Switch pour activer / désavtiver l'auto shazam
+- [ ] Historique (date + titre + lien shazam) + "Supprimer l'historique"
+
+### Features
+- [x] Slider pour modifier la fréquences des scans
+- [x] Récupérer et afficher le lien Shazam
+- [x] Switch pour l'autoclipboard
+- [x] Ajouter un scan pour une unique musique
 - [x] Auto copy on clipboard
-- [ ] Notification click : Musique => Clicboard
-- [ ] Récupérer le lien Shazam
-- [ ] Optimiser la vitesse de détection et les perfs
+
+### System
+- [x] Enlever la première notification vide
+- [x] Ne pas enregistrer les même sons consécutifs
+- [ ] Optimiser la vitesse de détection et les perfs (async)
+- [x] Lire le contenu des fichiers depuis js
+- [x] Supprimer les fichiers à la fin de l'utilisation
+- [ ] Sauvegarder les paramètres
+- [x] Afficher un msg si aucun son trouvé pr le "single shazam"
+
+### Finish
 - [ ] Publier l'app
-- [ ] Enlever la première notification vide
-- [ ] Utiliser des variables d'environnement pour éviter l'utilisation de fichiers

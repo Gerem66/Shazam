@@ -16,94 +16,229 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-const Lang = imports.lang;
-const St = imports.gi.St;
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const Mainloop = imports.mainloop;
-const GLib = imports.gi.GLib;
+/* exported init */
 
+const GETTEXT_DOMAIN = 'my-indicator-extension';
+
+const { GObject, St } = imports.gi;
+
+const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
+const _ = Gettext.gettext;
+
+const ExtensionUtils = imports.misc.extensionUtils;
+const Main = imports.ui.main;
+const Mainloop = imports.mainloop;
+const PanelMenu = imports.ui.panelMenu;
+const PopupMenu = imports.ui.popupMenu;
+const Slider = imports.ui.slider;
+const GLib = imports.gi.GLib;
 const Clipboard = St.Clipboard.get_default();
 const CLIPBOARD_TYPE = St.ClipboardType.CLIPBOARD;
 
-let lastsong = '';
-let state = 0;
-var icon_name = "audio-input-microphone-low";
 const currentPath = GLib.get_home_dir() + '/.local/share/gnome-shell/extensions/shazam@gerem';
 
-const toggleButton = new Lang.Class({
-    Name: "toggleButton",
-    Extends: PanelMenu.Button,
-        
-    _init: function () {
-    this.parent(null, "toggleButton");
-        
-    this.icon = new St.Icon({
-        icon_name: "audio-input-microphone-low",
-        style_class: "system-status-icon"
-    });
-    this.actor.add_actor(this.icon);
-    this.actor.connect('button-press-event', toggler);    
+const Indicator = GObject.registerClass(
+class Indicator extends PanelMenu.Button {
+
+    _init() {
+        super._init(0.0, _('My Shiny Indicator'));
+
+        this.timer = 10;
+        this._value = -1;
+        this.lastsong = "";
+        this.autoclipboard = true;
+        this._single = false;
+        this._shazaming = false;
+        this._build();
+    }
+
+    _build() {
+        // Box
+        let box = new St.BoxLayout({ style_class: 'panel-status-menu-box' });
+        box.add_child(new St.Icon({
+            icon_name: 'banshee-panel',
+            style_class: 'system-status-icon',
+        }));
+        box.add_child(PopupMenu.arrowIcon(St.Side.BOTTOM));
+        this.add_child(box);
+
+        // Button
+        //let clearMenuItem = new PopupMenu.PopupMenuItem(_('Clear history'));
+        //this.menu.addMenuItem(clearMenuItem);
+        //clearMenuItem.connect('activate', Lang.bind(this, this._removeAll));
+
+        // Separator
+        //this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        let autoclipboard = new PopupMenu.PopupSwitchMenuItem(_("Auto copy in clipboard"), this.autoclipboard, { reactive: true });
+        autoclipboard.connect('toggled', this._AutoClipboard_toggle.bind(this));
+        this.menu.addMenuItem(autoclipboard);
+
+        let autoShazam = new PopupMenu.PopupSwitchMenuItem(_("Auto shazam"), false, { reactive: true });
+        autoShazam.connect('toggled', this._AutoShazam_toggle.bind(this));
+        this.menu.addMenuItem(autoShazam);
+
+        // Slider
+        let sliderBox = new PopupMenu.PopupBaseMenuItem({ activate: false });
+        this.slider = new Slider.Slider(0);
+        this.slider_detail = new St.Label({ text: this.timer + 's' });
+        this.menu.addMenuItem(sliderBox);
+        sliderBox.add(this.slider_detail);
+        sliderBox.add_child(this.slider);
+
+        // Separator
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        let singleShazam = new PopupMenu.PopupMenuItem(_('Single shazam'));
+        singleShazam.connect('activate', this._SingleShazam.bind(this));
+        this.menu.addMenuItem(singleShazam);
+
+        //let settingsMenuItem = new PopupMenu.PopupMenuItem(_('Settings'));
+        //this.menu.addMenuItem(settingsMenuItem);
+        //settingsMenuItem.connect('activate', Lang.bind(this, this._openSettings));
+
+        this._LoopFunction(this._sync, 1);
+    }
+
+    _sync() {
+        // Slider change event
+        if (this._value != this.slider.value) {
+            this._value = this.slider.value;
+            this._SliderChange(parseInt(this._value * 590 + 10));
+        }
+        // Last artist change event
+        try {
+            let file = GLib.file_get_contents(currentPath + '/src/music');
+            let state = file[0];
+
+            if (state) {
+                let musics = String(file[1]).split('\n');
+                let index = Math.max(0, musics.length - 2);
+                if (musics[index] != '' && this.lastsong != musics[index]) {
+                    this._SongChanged(musics[index]);
+                }
+            }
+        } catch (err) {
+            // No file
+        }
+    }
+
+    _StartShazam() {
+        this._shazaming = true;
+        let content = "alive\n" + (this._single ? '9' : this.timer);
+        GLib.file_set_contents(currentPath + '/src/state', content, content.length);
+        GLib.file_set_contents(currentPath + '/src/music', "", 0);
+
+        this._Command('python ' + currentPath + '/src/main.py start', false);
+    }
+
+    _StopShazam() {
+        this._shazaming = false;
+        if (this._single) this._single = false;
+        if (this.lastsong != '') {
+            this.lastsong = '';
+        } else {
+            Main.notify(_('No music found :('));
+        }
+        this._FileDelete(currentPath + '/src/state');
+        this._FileDelete(currentPath + '/src/music');
+    }
+    
+    _SingleShazam() {
+        this._single = true;
+        this._StartShazam();
+        Mainloop.timeout_add_seconds(10, () => {
+            if (this._shazaming)
+                this._StopShazam();
+        });
+    }
+
+    // Events //
+
+    _SliderChange(value) {
+        this.timer = value;
+        this.slider_detail.text = value + 's';
+        if (this._FileExists(currentPath + '/src/state')) {
+            let content = "alive\n" + value;
+            GLib.file_set_contents(currentPath + '/src/state', content, content.length);
+        }
+    }
+
+    _AutoClipboard_toggle(obj, checked) {
+        this.autoclipboard = checked;
+    }
+
+    _AutoShazam_toggle(obj, checked) {
+        if (checked) this._StartShazam();
+        else this._StopShazam();
+    }
+
+    _SongChanged(song) {
+        this.lastsong = song;
+        Main.notify(_('Current music : ' + song));
+        if (this.autoclipboard)
+            Clipboard.set_text(CLIPBOARD_TYPE, song);
+        if (this._single)
+            this._StopShazam();
+    }
+
+    // Functions //
+
+    _FileExists(filename) {
+        let output = false;
+        try {
+            let file = GLib.file_get_contents(filename);
+            output = file[0];
+        } catch (err) {}
+        return output;
+    }
+
+    _FileDelete(filename) {
+        if (this._FileExists(filename))
+            GLib.unlink(filename);
+    }
+
+    _Command(command, sync = true) {
+        let spawn = sync ? GLib.spawn_sync : GLib.spawn_async;
+        let [res, out] = spawn(null, command.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null);
+    
+        let ret;
+        if(out == null) {
+            ret = _("Error executing command.");
+        } else {
+            ret = out.toString();
+        }
+        return sync ? ret : null;
+    }
+
+    _LoopFunction(func, delay, iteration = -1) {
+        if (iteration > 0 || iteration == -1) {
+            func.apply(this);
+            Mainloop.timeout_add_seconds(delay, () => {
+                this._LoopFunction(func, delay, Math.max(iteration - 1, -1));
+            });
+        }
     }
 });
 
-function enable() {
-    let panelToggleButton = new toggleButton();
-    Main.panel.addToStatusArea("shazam@gerem", panelToggleButton);
-    Main.panel.statusArea["shazam@gerem"].icon.icon_name = icon_name;
-    Main.panel.statusArea["shazam@gerem"].actor.visible = true;
-}
+class Extension {
+    constructor(uuid) {
+        this._uuid = uuid;
 
-function disable() {
-    Main.panel.statusArea["shazam@gerem"].destroy();
-    Main.panel.statusArea["shazam@gerem"].actor.visible = false;
-}
+        ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
+    }
 
-function init() {
-}
+    enable() {
+        this._indicator = new Indicator();
+        Main.panel.addToStatusArea(this._uuid, this._indicator);
+    }
 
-function toggler() {
-    state = !state;
-    if (state == 0) {
-        // Stop
-        Command('python ' + currentPath + '/src/main.py stop');
-        Main.panel.statusArea["shazam@gerem"].icon.icon_name = "audio-input-microphone-low";
-    } else {
-        // Start
-        Command('python ' + currentPath + '/src/main.py start', false);
-        LoopFunction(CheckLastArtist, 2);
-        Main.panel.statusArea["shazam@gerem"].icon.icon_name = "audio-input-microphone-none-panel";
+    disable() {
+        this._indicator.destroy();
+        this._indicator = null;
     }
 }
 
-function CheckLastArtist() {
-    let res = Command('python ' + currentPath + '/src/main.py get');
-    res = res.substring(0, res.length - 2);
-    if (res != lastsong) {
-        Main.notify(_("Musique actuelle : " + res));
-        Clipboard.set_text(CLIPBOARD_TYPE, res);
-        lastsong = res;
-    }
-}
-
-function Command(command, sync = true) {
-    let spawn = sync ? GLib.spawn_sync : GLib.spawn_async;
-    let [res, out] = spawn(null, command.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null);
-
-    let ret;
-    if(out == null) {
-        ret = _("Error executing command.");
-    } else {
-        ret = out.toString();
-    }
-    return sync ? ret : null;
-}
-
-function LoopFunction(func, delay, iteration = -1) {
-    if (state && (iteration > 0 || iteration == -1)) {
-        func();
-        Mainloop.timeout_add_seconds(delay, () => {
-            this.LoopFunction(func, delay, Math.max(iteration - 1, -1));
-        });
-    }
+function init(meta) {
+    return new Extension(meta.uuid);
 }
