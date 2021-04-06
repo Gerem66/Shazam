@@ -34,10 +34,14 @@ const Slider = imports.ui.slider;
 const GLib = imports.gi.GLib;
 const Clipboard = St.Clipboard.get_default();
 const CLIPBOARD_TYPE = St.ClipboardType.CLIPBOARD;
+const Clutter = imports.gi.Clutter;
+const Me = ExtensionUtils.getCurrentExtension();
+const ConfirmDialog = Me.imports.confirmDialog;
 
 const currentPath = GLib.get_home_dir() + '/.local/share/gnome-shell/extensions/shazam@gerem';
 const statePath = currentPath + '/src/state';
 const musicPath = currentPath + '/src/music';
+const MAX_ENTRY_LENGTH = 50;
 
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
@@ -67,10 +71,22 @@ class Indicator extends PanelMenu.Button {
         box.add_child(PopupMenu.arrowIcon(St.Side.BOTTOM));
         this.add_child(box);
 
-        // Button
-        //let clearMenuItem = new PopupMenu.PopupMenuItem(_('Clear history'));
-        //this.menu.addMenuItem(clearMenuItem);
-        //clearMenuItem.connect('activate', null);
+        // History
+        this.clipItemsRadioGroup = [];
+        this.historySection = new PopupMenu.PopupMenuSection();
+        this.scrollViewMenuSection = new PopupMenu.PopupMenuSection();
+        let historyScrollView = new St.ScrollView({
+            style_class: 'ci-history-menu-section',
+            overlay_scrollbars: true
+        });
+        historyScrollView.add_actor(this.historySection.actor);
+        this.scrollViewMenuSection.actor.add_actor(historyScrollView);
+        this.menu.addMenuItem(this.scrollViewMenuSection);
+
+        // Button - Clear history
+        let clearMenuItem = new PopupMenu.PopupMenuItem(_('Clear history'));
+        this.menu.addMenuItem(clearMenuItem);
+        clearMenuItem.connect('activate', this._removeAll.bind(this));
 
         // Separator
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
@@ -108,6 +124,72 @@ class Indicator extends PanelMenu.Button {
         this._LoopFunction(this._sync);
     }
 
+    // History functions //
+
+    _addEntry(buffer, url) {
+        let menuItem = new PopupMenu.PopupMenuItem('');
+
+        menuItem.menu = this.menu;
+        menuItem.clipContents = buffer;
+        menuItem.radioGroup = this.clipItemsRadioGroup;
+        menuItem.buttonPressId = menuItem.connect('activate', () => {
+            this._Command('xdg-open ' + url, false);
+        });
+
+        this._setEntryLabel(menuItem);
+        this.clipItemsRadioGroup.push(menuItem);
+
+	    // Delete button
+        let icon = new St.Icon({
+            icon_name: 'edit-delete-symbolic', //'mail-attachment-symbolic',
+            style_class: 'system-status-icon'
+        });
+
+        let icoBtn = new St.Button({
+            style_class: 'ci-action-btn',
+            can_focus: true,
+            child: icon,
+            x_align: Clutter.ActorAlign.END,
+            x_expand: true,
+            y_expand: true
+        });
+
+        menuItem.actor.add_child(icoBtn);
+        menuItem.icoBtn = icoBtn;
+        menuItem.deletePressId = icoBtn.connect('button-press-event', () => { this._removeEntry(menuItem, 'delete'); });
+
+        this.historySection.addMenuItem(menuItem, 0);
+    }
+
+    _removeEntry(menuItem, event) {
+        let itemIdx = this.clipItemsRadioGroup.indexOf(menuItem);
+        menuItem.destroy();
+        this.clipItemsRadioGroup.splice(itemIdx, 1);
+    }
+
+    _removeAll() {
+        if (this.clipItemsRadioGroup.length == 0)
+            return;
+
+        const title = _("Clear all ?");
+        const message = _("Are you sure you want to delete all music items ?");
+        const sub_message = _("This operation cannot be undone.");
+
+        ConfirmDialog.openConfirmDialog(title, message, sub_message, _("Clear"), _("Cancel"), () => {
+            this.historySection._getMenuItems().forEach((item) => {
+                this._removeEntry(item);
+            });
+            Main.notify(_('Music history cleared'));
+        });
+    }
+
+    _setEntryLabel(menuItem) {
+        let buffer = menuItem.clipContents;
+        menuItem.label.set_text(this._truncate(buffer, MAX_ENTRY_LENGTH));
+    }
+
+    // Main features //
+
     _sync() {
         // Slider change event
         if (this._value != this.slider.value) {
@@ -124,7 +206,8 @@ class Indicator extends PanelMenu.Button {
                 let musics = String(file[1]).split('\n');
                 let index = Math.max(0, musics.length - 2);
                 if (musics[index] != '' && this._lastsong != musics[index]) {
-                    this._SongChanged(musics[index]);
+                    let [title, shazam] = musics[index].split(';');
+                    this._SongChanged(title, shazam);
                 }
             }
         }
@@ -154,7 +237,7 @@ class Indicator extends PanelMenu.Button {
     _SingleShazam() {
         this._single = true;
         this._StartShazam();
-        Mainloop.timeout_add_seconds(10, () => {
+        Mainloop.timeout_add_seconds(20, () => {
             if (this._shazaming)
                 this._StopShazam();
         });
@@ -180,11 +263,12 @@ class Indicator extends PanelMenu.Button {
         else this._StopShazam();
     }
 
-    _SongChanged(song) {
-        this._lastsong = song;
-        Main.notify(_('Current music : ' + song));
+    _SongChanged(title, shazam) {
+        this._lastsong = title;
+        this._addEntry(title, shazam);
+        Main.notify(_('Current music : ' + title));
         if (this._autoclipboard)
-            Clipboard.set_text(CLIPBOARD_TYPE, song);
+            Clipboard.set_text(CLIPBOARD_TYPE, title);
         if (this._single)
             this._StopShazam();
     }
@@ -203,6 +287,15 @@ class Indicator extends PanelMenu.Button {
     _FileDelete(filename) {
         if (this._FileExists(filename))
             GLib.unlink(filename);
+    }
+
+    _truncate(string, length) {
+        let shortened = string.replace(/\s+/g, ' ');
+
+        if (shortened.length > length)
+            shortened = shortened.substring(0,length-1) + '...';
+
+        return shortened;
     }
 
     _Command(command, sync = true) {

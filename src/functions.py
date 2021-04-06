@@ -24,9 +24,7 @@ class GnomeShazam():
                 title = read[1]['track']['share']['subject']
                 shazam = read[1]['track']['share']['href']
                 
-                #song = "{} - {}".format(title, artist)
-                #song = read[1]
-                song = title
+                song = title + ';' + shazam
                 Attempt = 0
             except Exception as ex:
                 pass
