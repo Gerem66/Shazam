@@ -5,6 +5,16 @@ Shazam for Gnome 3.8
 > Tested on Gnome 3.8 environment on ArchLinux  
 > Tested on python 3.9.2
 
+## How to install
+### Install python packages
+* `pip install pyaudio`
+* `pip install ShazamAPI`
+### Download extension from git
+* `git clone https://github.com/Gerem66/Shazam.git ~/.local/share/gnome-shell/extensions/shazam@gerem`
+
+## How to remove
+* `rm -R ~/.local/share/gnome-shell/extensions/shazam@gerem`
+
 ## Todo
 ### Interface
 - [x] Faire une interface
