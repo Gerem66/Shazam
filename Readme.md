@@ -14,20 +14,23 @@ Shazam for Gnome 3.8
 
 ## How to remove
 * `rm -R ~/.local/share/gnome-shell/extensions/shazam@gerem`
+* `pip uninstall pyaudio`
+* `pip uninstall ShazamAPI`
 
 ## Todo
+- [ ] Sauvegarder les paramètres (switchs par défaut / timer / historique)
+- [ ] Publier l'app
+<!--
 ### Interface
 - [x] Faire une interface
 - [x] Switch pour activer / désavtiver l'auto shazam
 - [x] Historique (date + titre + lien shazam) + "Supprimer l'historique"
-
 ### Features
 - [x] Slider pour modifier la fréquences des scans
 - [x] Récupérer et afficher le lien Shazam
 - [x] Switch pour l'autoclipboard
 - [x] Ajouter un scan pour une unique musique
 - [x] Auto copy on clipboard
-
 ### System
 - [ ] Sauvegarder les paramètres (switchs par défaut / timer / historique)
 - [x] Optimiser la vitesse de détection et les perfs (async)
@@ -37,9 +40,9 @@ Shazam for Gnome 3.8
 - [x] Lire le contenu des fichiers depuis js
 - [x] Supprimer les fichiers à la fin de l'utilisation
 - [x] Afficher un msg si aucun son trouvé pr le "single shazam"
-
 ### Finish
 - [ ] Publier l'app
+-->
 
 ## Links - Thanks to
 * DialogBox / History [Gnome shell extension clipboard indicator](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator)
