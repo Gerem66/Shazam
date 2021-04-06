@@ -18,8 +18,9 @@ Shazam for Gnome 3.8
 * `pip uninstall ShazamAPI`
 
 ## Todo
-- [ ] Sauvegarder les paramètres (switchs par défaut / timer / historique)
-- [ ] Publier l'app
+- [ ] Save settings (default switches / timer)
+- [ ] Save history
+- [ ] Publish the app
 <!--
 ### Interface
 - [x] Faire une interface
@@ -32,7 +33,8 @@ Shazam for Gnome 3.8
 - [x] Ajouter un scan pour une unique musique
 - [x] Auto copy on clipboard
 ### System
-- [ ] Sauvegarder les paramètres (switchs par défaut / timer / historique)
+- [ ] Sauvegarder les paramètres (switchs par défaut / timer)
+- [ ] Sauvegarder l'historique
 - [x] Optimiser la vitesse de détection et les perfs (async)
 - [x] Fenêtre de confirmation pour supprimer l'historique
 - [x] Enlever la première notification vide

@@ -17,5 +17,6 @@
 }
 
 .ci-history-menu-section {
-    max-height:450px;
+    max-height: 300px;
+    background: rgba(0, 0, 0, .25);
 }
