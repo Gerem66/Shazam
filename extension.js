@@ -55,7 +55,7 @@ class Indicator extends PanelMenu.Button {
 
         this._value = -1;
         this._lastsong = "";
-        this._autoclipboard = true;
+        this._autoclipboard = false;
         this._single = false;
         this._shazaming = false;
         this._build();
@@ -84,9 +84,10 @@ class Indicator extends PanelMenu.Button {
         this.menu.addMenuItem(this.scrollViewMenuSection);
 
         // Button - Clear history
-        let clearMenuItem = new PopupMenu.PopupMenuItem(_('Clear history'));
-        this.menu.addMenuItem(clearMenuItem);
-        clearMenuItem.connect('activate', this._removeAll.bind(this));
+        this.clearHistory = new PopupMenu.PopupMenuItem(_('Clear history'));
+        this.menu.addMenuItem(this.clearHistory);
+        this.clearHistory.connect('activate', this._removeAll.bind(this));
+        this.clearHistory.reactive = false;
 
         // Separator
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
@@ -127,6 +128,9 @@ class Indicator extends PanelMenu.Button {
     // History functions //
 
     _addEntry(buffer, url) {
+        if (!this.clearHistory.reactive)
+            this.clearHistory.reactive = true;
+
         let menuItem = new PopupMenu.PopupMenuItem('');
 
         menuItem.menu = this.menu;
@@ -165,12 +169,12 @@ class Indicator extends PanelMenu.Button {
         let itemIdx = this.clipItemsRadioGroup.indexOf(menuItem);
         menuItem.destroy();
         this.clipItemsRadioGroup.splice(itemIdx, 1);
+
+        if (this.clearHistory.reactive && this.clipItemsRadioGroup.length == 0)
+            this.clearHistory.reactive = false;
     }
 
     _removeAll() {
-        if (this.clipItemsRadioGroup.length == 0)
-            return;
-
         const title = _("Clear all ?");
         const message = _("Are you sure you want to delete all music items ?");
         const sub_message = _("This operation cannot be undone.");
@@ -179,6 +183,7 @@ class Indicator extends PanelMenu.Button {
             this.historySection._getMenuItems().forEach((item) => {
                 this._removeEntry(item);
             });
+            this.clearHistory.reactive = false;
             Main.notify(_('Music history cleared'));
         });
     }
