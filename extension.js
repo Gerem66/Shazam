@@ -49,9 +49,9 @@ class Indicator extends PanelMenu.Button {
     _init() {
         super._init(0.0, _('Shazam for gnome 3.8'));
 
-        this._timer = 10;
-        this._timer_min = 10;
+        this._timer_min = 15;
         this._timer_max = 300;
+        this._timer = this._timer_min;
 
         this._value = -1;
         this._lastsong = "";
@@ -215,7 +215,7 @@ class Indicator extends PanelMenu.Button {
 
     _StartShazam() {
         this._shazaming = true;
-        let content = String(this._single ? '9' : this._timer);
+        let content = String(this._single ? '10' : this._timer);
         GLib.file_set_contents(statePath, content, content.length);
         GLib.file_set_contents(musicPath, "", 0);
 
