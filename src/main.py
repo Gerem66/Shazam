@@ -12,19 +12,23 @@ currentPath = '/'.join(sys.argv[0].split('/')[:-1])
 
 def AddValue(value):
     global currentPath
-    file = open(currentPath + '/music', 'a')
-    file.write(value + "\n")
-    file.close()
+    if os.path.exists(currentPath + '/music'):
+        file = open(currentPath + '/music', 'a')
+        file.write(value + "\n")
+        file.close()
 
 def CheckHealth():
     global LOOP_LENGTH, currentPath
-    state = None
+    state = False
     if os.path.exists(currentPath + '/state'):
-        file = open(currentPath + '/state', 'r')
+        state = True
+        with open(currentPath + '/state', 'r') as f:
+            LOOP_LENGTH = int(f.readlines()[0])
+        '''file = open(currentPath + '/state', 'r')
         lines = file.readlines()
         state = lines[0][:-1] == 'alive'
         LOOP_LENGTH = int(lines[1])
-        file.close()
+        file.close()'''
     return state
 
 def Loop():

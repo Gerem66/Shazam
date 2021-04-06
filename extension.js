@@ -36,17 +36,22 @@ const Clipboard = St.Clipboard.get_default();
 const CLIPBOARD_TYPE = St.ClipboardType.CLIPBOARD;
 
 const currentPath = GLib.get_home_dir() + '/.local/share/gnome-shell/extensions/shazam@gerem';
+const statePath = currentPath + '/src/state';
+const musicPath = currentPath + '/src/music';
 
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
 
     _init() {
-        super._init(0.0, _('My Shiny Indicator'));
+        super._init(0.0, _('Shazam for gnome 3.8'));
 
-        this.timer = 10;
+        this._timer = 10;
+        this._timer_min = 10;
+        this._timer_max = 300;
+
         this._value = -1;
-        this.lastsong = "";
-        this.autoclipboard = true;
+        this._lastsong = "";
+        this._autoclipboard = true;
         this._single = false;
         this._shazaming = false;
         this._build();
@@ -65,23 +70,25 @@ class Indicator extends PanelMenu.Button {
         // Button
         //let clearMenuItem = new PopupMenu.PopupMenuItem(_('Clear history'));
         //this.menu.addMenuItem(clearMenuItem);
-        //clearMenuItem.connect('activate', Lang.bind(this, this._removeAll));
+        //clearMenuItem.connect('activate', null);
 
         // Separator
-        //this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        let autoclipboard = new PopupMenu.PopupSwitchMenuItem(_("Auto copy in clipboard"), this.autoclipboard, { reactive: true });
+        // Switch - Auto clipboard
+        let autoclipboard = new PopupMenu.PopupSwitchMenuItem(_("Auto copy in clipboard"), this._autoclipboard, { reactive: true });
         autoclipboard.connect('toggled', this._AutoClipboard_toggle.bind(this));
         this.menu.addMenuItem(autoclipboard);
 
+        // Switch - Auto Shazam
         let autoShazam = new PopupMenu.PopupSwitchMenuItem(_("Auto shazam"), false, { reactive: true });
         autoShazam.connect('toggled', this._AutoShazam_toggle.bind(this));
         this.menu.addMenuItem(autoShazam);
 
-        // Slider
+        // Slider - timer
         let sliderBox = new PopupMenu.PopupBaseMenuItem({ activate: false });
         this.slider = new Slider.Slider(0);
-        this.slider_detail = new St.Label({ text: this.timer + 's' });
+        this.slider_detail = new St.Label({ text: this._timer + 's' });
         this.menu.addMenuItem(sliderBox);
         sliderBox.add(this.slider_detail);
         sliderBox.add_child(this.slider);
@@ -89,45 +96,45 @@ class Indicator extends PanelMenu.Button {
         // Separator
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
+        // Button - Single Shazam
         let singleShazam = new PopupMenu.PopupMenuItem(_('Single shazam'));
         singleShazam.connect('activate', this._SingleShazam.bind(this));
         this.menu.addMenuItem(singleShazam);
 
         //let settingsMenuItem = new PopupMenu.PopupMenuItem(_('Settings'));
         //this.menu.addMenuItem(settingsMenuItem);
-        //settingsMenuItem.connect('activate', Lang.bind(this, this._openSettings));
+        //settingsMenuItem.connect('activate', null);
 
-        this._LoopFunction(this._sync, 1);
+        this._LoopFunction(this._sync);
     }
 
     _sync() {
         // Slider change event
         if (this._value != this.slider.value) {
             this._value = this.slider.value;
-            this._SliderChange(parseInt(this._value * 590 + 10));
+            let v = this._value * (this._timer_max - this._timer_min) + this._timer_min;
+            this._SliderChange(parseInt(v));
         }
         // Last artist change event
-        try {
-            let file = GLib.file_get_contents(currentPath + '/src/music');
+        if (this._FileExists(musicPath)) {
+            let file = GLib.file_get_contents(musicPath);
             let state = file[0];
 
             if (state) {
                 let musics = String(file[1]).split('\n');
                 let index = Math.max(0, musics.length - 2);
-                if (musics[index] != '' && this.lastsong != musics[index]) {
+                if (musics[index] != '' && this._lastsong != musics[index]) {
                     this._SongChanged(musics[index]);
                 }
             }
-        } catch (err) {
-            // No file
         }
     }
 
     _StartShazam() {
         this._shazaming = true;
-        let content = "alive\n" + (this._single ? '9' : this.timer);
-        GLib.file_set_contents(currentPath + '/src/state', content, content.length);
-        GLib.file_set_contents(currentPath + '/src/music', "", 0);
+        let content = String(this._single ? '9' : this._timer);
+        GLib.file_set_contents(statePath, content, content.length);
+        GLib.file_set_contents(musicPath, "", 0);
 
         this._Command('python ' + currentPath + '/src/main.py start', false);
     }
@@ -135,13 +142,13 @@ class Indicator extends PanelMenu.Button {
     _StopShazam() {
         this._shazaming = false;
         if (this._single) this._single = false;
-        if (this.lastsong != '') {
-            this.lastsong = '';
+        if (this._lastsong != '') {
+            this._lastsong = '';
         } else {
             Main.notify(_('No music found :('));
         }
-        this._FileDelete(currentPath + '/src/state');
-        this._FileDelete(currentPath + '/src/music');
+        this._FileDelete(statePath);
+        this._FileDelete(musicPath);
     }
     
     _SingleShazam() {
@@ -156,16 +163,16 @@ class Indicator extends PanelMenu.Button {
     // Events //
 
     _SliderChange(value) {
-        this.timer = value;
+        this._timer = value;
         this.slider_detail.text = value + 's';
-        if (this._FileExists(currentPath + '/src/state')) {
+        if (this._FileExists(statePath)) {
             let content = "alive\n" + value;
-            GLib.file_set_contents(currentPath + '/src/state', content, content.length);
+            GLib.file_set_contents(statePath, content, content.length);
         }
     }
 
     _AutoClipboard_toggle(obj, checked) {
-        this.autoclipboard = checked;
+        this._autoclipboard = checked;
     }
 
     _AutoShazam_toggle(obj, checked) {
@@ -174,9 +181,9 @@ class Indicator extends PanelMenu.Button {
     }
 
     _SongChanged(song) {
-        this.lastsong = song;
+        this._lastsong = song;
         Main.notify(_('Current music : ' + song));
-        if (this.autoclipboard)
+        if (this._autoclipboard)
             Clipboard.set_text(CLIPBOARD_TYPE, song);
         if (this._single)
             this._StopShazam();
@@ -211,7 +218,7 @@ class Indicator extends PanelMenu.Button {
         return sync ? ret : null;
     }
 
-    _LoopFunction(func, delay, iteration = -1) {
+    _LoopFunction(func, delay = 1, iteration = -1) {
         if (iteration > 0 || iteration == -1) {
             func.apply(this);
             Mainloop.timeout_add_seconds(delay, () => {
