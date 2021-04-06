@@ -203,11 +203,14 @@ class Indicator extends PanelMenu.Button {
             let state = file[0];
 
             if (state) {
-                let musics = String(file[1]).split('\n');
-                let index = Math.max(0, musics.length - 2);
-                if (musics[index] != '' && this._lastsong != musics[index]) {
+                let content = String(file[1]);
+                let musics = content.split('\n');
+                if (content != '' && musics.length > 1) {
+                    let index = Math.max(0, musics.length - 2);
                     let [title, shazam] = musics[index].split(';');
-                    this._SongChanged(title, shazam);
+                    if (title != '' && this._lastsong != title) {
+                        this._SongChanged(title, shazam);
+                    }
                 }
             }
         }
