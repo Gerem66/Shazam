@@ -6,11 +6,14 @@ Shazam for Gnome 3.8
 > Tested on python 3.9.2
 
 ## How to install
-### Install python packages
-* `pip install pyaudio`
-* `pip install ShazamAPI`
-### Download extension from git
-* `git clone https://github.com/Gerem66/Shazam.git ~/.local/share/gnome-shell/extensions/shazam@gerem`
+- Requirements
+    * [Python 3.9.X](https://www.python.org/)
+    * [Pip3](https://pypi.org/project/pip/)
+- Install python packages
+    * [PyAudio](https://pypi.org/project/PyAudio/) `pip install pyaudio`
+    * [ShazamAPI](https://pypi.org/project/ShazamAPI/)`pip install ShazamAPI`
+- Download extension from git
+    * `git clone https://github.com/Gerem66/Shazam.git ~/.local/share/gnome-shell/extensions/shazam@gerem`
 
 ## How to remove
 * `rm -R ~/.local/share/gnome-shell/extensions/shazam@gerem`
