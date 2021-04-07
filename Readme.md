@@ -11,7 +11,7 @@ Shazam for Gnome 3.8
     * [Pip3](https://pypi.org/project/pip/)
 - Install python packages
     * [PyAudio](https://pypi.org/project/PyAudio/) `pip install pyaudio`
-    * [ShazamAPI](https://pypi.org/project/ShazamAPI/)`pip install ShazamAPI`
+    * [ShazamAPI](https://pypi.org/project/ShazamAPI/) `pip install ShazamAPI`
 - Download extension from git
     * `git clone https://github.com/Gerem66/Shazam.git ~/.local/share/gnome-shell/extensions/shazam@gerem`
 
