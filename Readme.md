@@ -7,8 +7,9 @@ Shazam for Gnome 3.8
 
 ## How to install
 - Requirements
-    * [Python 3.9.X](https://www.python.org/)
+    * [Python >= 3.8](https://www.python.org/)
     * [Pip3](https://pypi.org/project/pip/)
+    * ffmpeg : on ubuntu `sudo apt install ffmpeg`
 - Install python packages
     * [PyAudio](https://pypi.org/project/PyAudio/) `pip install pyaudio`
     * [ShazamAPI](https://pypi.org/project/ShazamAPI/) `pip install ShazamAPI`

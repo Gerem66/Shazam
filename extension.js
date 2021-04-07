@@ -227,7 +227,7 @@ class Indicator extends PanelMenu.Button {
         GLib.file_set_contents(statePath, content, content.length);
         GLib.file_set_contents(musicPath, "", 0);
 
-        this._Command('python ' + currentPath + '/src/main.py start', false);
+        this._Command('python3 ' + currentPath + '/src/main.py start', false);
     }
 
     _StopShazam() {
